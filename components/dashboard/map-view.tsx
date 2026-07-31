@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
-import { cn } from '@/lib/utils'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DrainDevice, DrainStatus } from '@/lib/types'
-import { Settings2, ZoomIn, ZoomOut, Locate, Layers } from 'lucide-react'
+import { ZoomIn, ZoomOut, Locate, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MapViewProps {
@@ -13,184 +12,393 @@ interface MapViewProps {
   region: string
 }
 
-function getStatusColor(status: DrainStatus): string {
-  switch (status) {
-    case 'normal':
-      return 'bg-emerald-500'
-    case 'warning':
-      return 'bg-amber-500'
-    case 'danger':
-      return 'bg-rose-500'
-    case 'offline':
-      return 'bg-slate-500'
-    default:
-      return 'bg-slate-500'
+interface KakaoLatLng {
+  readonly __kakaoLatLngBrand?: never
+}
+
+interface KakaoMap {
+  getLevel(): number
+  panTo(position: KakaoLatLng): void
+  relayout(): void
+  setCenter(position: KakaoLatLng): void
+  setLevel(level: number, options?: { animate?: boolean }): void
+  setMapTypeId(mapTypeId: string): void
+}
+
+interface KakaoCustomOverlay {
+  setMap(map: KakaoMap | null): void
+}
+
+interface KakaoMapsApi {
+  load(callback: () => void): void
+  LatLng: new (lat: number, lng: number) => KakaoLatLng
+  Map: new (
+    container: HTMLElement,
+    options: { center: KakaoLatLng; level: number }
+  ) => KakaoMap
+  CustomOverlay: new (options: {
+    position: KakaoLatLng
+    content: HTMLElement
+    xAnchor: number
+    yAnchor: number
+    zIndex: number
+  }) => KakaoCustomOverlay
+  MapTypeId: {
+    ROADMAP: string
+    HYBRID: string
   }
 }
 
-function getStatusRingColor(status: DrainStatus): string {
-  switch (status) {
-    case 'normal':
-      return 'ring-emerald-500/30'
-    case 'warning':
-      return 'ring-amber-500/30'
-    case 'danger':
-      return 'ring-rose-500/30'
-    case 'offline':
-      return 'ring-slate-500/30'
-    default:
-      return 'ring-slate-500/30'
+declare global {
+  interface Window {
+    kakao?: {
+      maps: KakaoMapsApi
+    }
   }
 }
 
-// Convert lat/lng to map position (simplified for demo)
-function latLngToPosition(lat: number, lng: number): { x: number; y: number } {
-  // Gangnam area bounds (approximate)
-  const minLat = 37.475
-  const maxLat = 37.535
-  const minLng = 127.005
-  const maxLng = 127.075
-  
-  const x = ((lng - minLng) / (maxLng - minLng)) * 100
-  const y = ((maxLat - lat) / (maxLat - minLat)) * 100
-  
-  return { x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)) }
+const KAKAO_MAP_SCRIPT_ID = 'kakao-map-sdk'
+const DEFAULT_CENTER = { lat: 37.4979, lng: 127.0276 }
+
+let kakaoMapsPromise: Promise<KakaoMapsApi> | null = null
+
+function loadKakaoMaps(appKey: string): Promise<KakaoMapsApi> {
+  if (window.kakao?.maps?.Map) {
+    return Promise.resolve(window.kakao.maps)
+  }
+
+  if (kakaoMapsPromise) {
+    return kakaoMapsPromise
+  }
+
+  const loadingPromise = new Promise<KakaoMapsApi>((resolve, reject) => {
+    const finishLoading = () => {
+      if (!window.kakao?.maps) {
+        reject(new Error('카카오맵 SDK를 찾을 수 없습니다.'))
+        return
+      }
+
+      window.kakao.maps.load(() => resolve(window.kakao!.maps))
+    }
+
+    const existingScript = document.getElementById(
+      KAKAO_MAP_SCRIPT_ID
+    ) as HTMLScriptElement | null
+
+    if (existingScript) {
+      existingScript.addEventListener('load', finishLoading, { once: true })
+      existingScript.addEventListener(
+        'error',
+        () => reject(new Error('카카오맵 SDK를 불러오지 못했습니다.')),
+        { once: true }
+      )
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = KAKAO_MAP_SCRIPT_ID
+    script.async = true
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appKey)}&autoload=false`
+    script.addEventListener('load', finishLoading, { once: true })
+    script.addEventListener(
+      'error',
+      () => reject(new Error('카카오맵 SDK를 불러오지 못했습니다.')),
+      { once: true }
+    )
+    document.head.appendChild(script)
+  }).catch((error: unknown) => {
+    kakaoMapsPromise = null
+    throw error
+  })
+
+  kakaoMapsPromise = loadingPromise
+  return loadingPromise
 }
 
-export function MapView({ devices, selectedDevice, onSelectDevice, region }: MapViewProps) {
-  const devicePositions = useMemo(() => {
-    return devices.map(device => ({
-      ...device,
-      position: latLngToPosition(device.lat, device.lng)
-    }))
-  }, [devices])
+function getStatusLabel(status: DrainStatus): string {
+  switch (status) {
+    case 'normal':
+      return '정상'
+    case 'warning':
+      return '점검요망'
+    case 'danger':
+      return '침수위험'
+    case 'offline':
+      return '오프라인'
+  }
+}
+
+function createDeviceMarker(
+  device: DrainDevice,
+  selected: boolean,
+  onSelect: () => void
+): HTMLButtonElement {
+  const marker = document.createElement('button')
+  marker.type = 'button'
+  marker.className = [
+    'kakao-device-marker',
+    `kakao-device-marker--${device.status}`,
+    selected ? 'kakao-device-marker--selected' : '',
+  ].filter(Boolean).join(' ')
+  marker.title = `${device.name} · ${getStatusLabel(device.status)}`
+  marker.setAttribute('aria-label', marker.title)
+
+  const pulse = document.createElement('span')
+  pulse.className = 'kakao-device-marker__pulse'
+
+  const dot = document.createElement('span')
+  dot.className = 'kakao-device-marker__dot'
+
+  marker.append(pulse, dot)
+  marker.addEventListener('click', onSelect)
+
+  return marker
+}
+
+export function MapView({
+  devices,
+  selectedDevice,
+  onSelectDevice,
+  region,
+}: MapViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<KakaoMap | null>(null)
+  const mapsApiRef = useRef<KakaoMapsApi | null>(null)
+  const [mapReady, setMapReady] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [isHybrid, setIsHybrid] = useState(false)
+  const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_APP_KEY?.trim()
+  const configurationError = appKey
+    ? null
+    : 'NEXT_PUBLIC_KAKAO_MAP_APP_KEY가 설정되지 않았습니다.'
+
+  useEffect(() => {
+    if (!appKey) {
+      return
+    }
+
+    let cancelled = false
+
+    loadKakaoMaps(appKey)
+      .then((maps) => {
+        if (cancelled || !containerRef.current) return
+
+        const centerDevice = selectedDevice ?? devices[0]
+        const center = centerDevice
+          ? new maps.LatLng(centerDevice.lat, centerDevice.lng)
+          : new maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng)
+
+        mapsApiRef.current = maps
+        mapRef.current = new maps.Map(containerRef.current, {
+          center,
+          level: 6,
+        })
+        setMapReady(true)
+        setMapError(null)
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return
+        setMapError(
+          error instanceof Error
+            ? error.message
+            : '카카오맵을 초기화하지 못했습니다.'
+        )
+      })
+
+    return () => {
+      cancelled = true
+      mapRef.current = null
+      mapsApiRef.current = null
+    }
+  // 지도 인스턴스는 SDK 키가 바뀔 때만 새로 생성합니다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appKey])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !mapsApiRef.current) return
+
+    const map = mapRef.current
+    const maps = mapsApiRef.current
+    const overlays = devices.map((device) => {
+      const selectDevice = () => onSelectDevice(device)
+      const marker = createDeviceMarker(
+        device,
+        selectedDevice?.id === device.id,
+        selectDevice
+      )
+      const overlay = new maps.CustomOverlay({
+        position: new maps.LatLng(device.lat, device.lng),
+        content: marker,
+        xAnchor: 0.5,
+        yAnchor: 0.5,
+        zIndex: selectedDevice?.id === device.id ? 20 : 10,
+      })
+
+      overlay.setMap(map)
+
+      return { overlay, marker, selectDevice }
+    })
+
+    return () => {
+      overlays.forEach(({ overlay, marker, selectDevice }) => {
+        marker.removeEventListener('click', selectDevice)
+        overlay.setMap(null)
+      })
+    }
+  }, [devices, mapReady, onSelectDevice, selectedDevice?.id])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !mapsApiRef.current || !selectedDevice) {
+      return
+    }
+
+    mapRef.current.panTo(
+      new mapsApiRef.current.LatLng(selectedDevice.lat, selectedDevice.lng)
+    )
+  }, [mapReady, selectedDevice])
+
+  useEffect(() => {
+    if (!mapReady || !containerRef.current || !mapRef.current) return
+
+    const map = mapRef.current
+    const observer = new ResizeObserver(() => map.relayout())
+    observer.observe(containerRef.current)
+
+    return () => observer.disconnect()
+  }, [mapReady])
+
+  const handleZoomIn = useCallback(() => {
+    const map = mapRef.current
+    if (map) map.setLevel(Math.max(1, map.getLevel() - 1), { animate: true })
+  }, [])
+
+  const handleZoomOut = useCallback(() => {
+    const map = mapRef.current
+    if (map) map.setLevel(map.getLevel() + 1, { animate: true })
+  }, [])
+
+  const handleMoveToSelection = useCallback(() => {
+    const map = mapRef.current
+    const maps = mapsApiRef.current
+    const target = selectedDevice ?? devices[0]
+    if (!map || !maps || !target) return
+
+    map.panTo(new maps.LatLng(target.lat, target.lng))
+  }, [devices, selectedDevice])
+
+  const handleToggleMapType = useCallback(() => {
+    const map = mapRef.current
+    const maps = mapsApiRef.current
+    if (!map || !maps) return
+
+    const nextHybrid = !isHybrid
+    map.setMapTypeId(
+      nextHybrid ? maps.MapTypeId.HYBRID : maps.MapTypeId.ROADMAP
+    )
+    setIsHybrid(nextHybrid)
+  }, [isHybrid])
 
   return (
-    <div className="relative flex-1 bg-card rounded-xl border border-border overflow-hidden">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">{region}</h3>
-          <Button variant="ghost" size="icon" className="h-7 w-7">
-            <Settings2 className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className="relative h-full min-h-[300px] bg-card rounded-xl border border-border overflow-hidden">
+      <div ref={containerRef} className="absolute inset-0" aria-label={`${region} 빗물받이 관제 지도`} />
+
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-card/90 backdrop-blur-sm border-b border-border pointer-events-none">
+        <h3 className="text-sm font-semibold text-foreground">{region}</h3>
+        <span className="text-[11px] text-muted-foreground">Kakao Map</span>
       </div>
 
-      {/* Map Area - Using a stylized grid background */}
-      <div 
-        className="absolute inset-0 bg-secondary/50"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px'
-        }}
-      >
-        {/* Street overlay simulation */}
-        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          {/* Minor roads */}
-          <line x1="0%" y1="25%" x2="100%" y2="25%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="0%" y1="50%" x2="100%" y2="50%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="0%" y1="75%" x2="100%" y2="75%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="20%" y1="0%" x2="20%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="40%" y1="0%" x2="40%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="60%" y1="0%" x2="60%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          <line x1="80%" y1="0%" x2="80%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-muted-foreground/20" />
-          
-          {/* Major roads */}
-          <line x1="0%" y1="35%" x2="100%" y2="35%" stroke="currentColor" strokeWidth="3" className="text-primary/20" />
-          <line x1="0%" y1="65%" x2="100%" y2="65%" stroke="currentColor" strokeWidth="3" className="text-primary/20" />
-          <line x1="30%" y1="0%" x2="30%" y2="100%" stroke="currentColor" strokeWidth="3" className="text-primary/20" />
-          <line x1="70%" y1="0%" x2="70%" y2="100%" stroke="currentColor" strokeWidth="3" className="text-primary/20" />
-          
-          {/* Main arterial roads */}
-          <line x1="5%" y1="45%" x2="95%" y2="45%" stroke="currentColor" strokeWidth="4" className="text-primary/30" />
-          <line x1="50%" y1="10%" x2="50%" y2="90%" stroke="currentColor" strokeWidth="4" className="text-primary/30" />
-        </svg>
+      {(configurationError ?? mapError) && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-card p-6">
+          <div className="max-w-sm text-center">
+            <p className="text-sm font-semibold text-foreground">지도를 표시할 수 없습니다</p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {configurationError ?? mapError}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              환경변수와 카카오 디벨로퍼스의 JavaScript SDK 도메인을 확인하세요.
+            </p>
+          </div>
+        </div>
+      )}
 
-        {/* Neighborhood Labels */}
-        <div className="absolute top-[15%] left-[20%] text-xs text-muted-foreground/60">신사동</div>
-        <div className="absolute top-[20%] left-[45%] text-xs text-muted-foreground/60">청담동</div>
-        <div className="absolute top-[25%] left-[75%] text-xs text-muted-foreground/60">삼성동</div>
-        <div className="absolute top-[45%] left-[15%] text-xs text-muted-foreground/60">논현동</div>
-        <div className="absolute top-[50%] left-[35%] text-xs text-muted-foreground/60">역삼동</div>
-        <div className="absolute top-[55%] left-[65%] text-xs text-muted-foreground/60">대치동</div>
-        <div className="absolute top-[75%] left-[25%] text-xs text-muted-foreground/60">개포동</div>
-        <div className="absolute top-[70%] left-[55%] text-xs text-muted-foreground/60">도곡동</div>
+      {!mapReady && !configurationError && !mapError && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card">
+          <p className="text-sm text-muted-foreground">지도를 불러오는 중입니다…</p>
+        </div>
+      )}
 
-        {/* Device Markers */}
-        {devicePositions.map((device) => (
-          <button
-            key={device.id}
-            onClick={() => onSelectDevice(device)}
-            className={cn(
-              "absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200",
-              selectedDevice?.id === device.id ? "z-20 scale-125" : "z-10 hover:scale-110"
-            )}
-            style={{
-              left: `${device.position.x}%`,
-              top: `${device.position.y}%`
-            }}
-          >
-            <div className="relative">
-              {/* Pulse animation for danger status */}
-              {device.status === 'danger' && (
-                <span className={cn(
-                  "absolute inset-0 rounded-full pulse-ring",
-                  getStatusColor(device.status)
-                )} />
-              )}
-              <div className={cn(
-                "w-4 h-4 rounded-full ring-4 shadow-lg",
-                getStatusColor(device.status),
-                getStatusRingColor(device.status),
-                selectedDevice?.id === device.id && "ring-8"
-              )} />
+      {mapReady && (
+        <>
+          <div className="absolute bottom-8 left-4 z-10 p-3 bg-card/90 backdrop-blur-sm rounded-lg border border-border shadow-lg">
+            <p className="text-xs font-medium text-muted-foreground mb-2">범례</p>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-foreground">정상</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-3 rounded-full bg-amber-500" />
+                <span className="text-foreground">점검요망</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-3 rounded-full bg-rose-500" />
+                <span className="text-foreground">침수위험</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-3 h-3 rounded-full bg-slate-500" />
+                <span className="text-foreground">오프라인</span>
+              </div>
             </div>
-          </button>
-        ))}
-      </div>
+          </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-16 left-4 z-10 p-3 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
-        <p className="text-xs font-medium text-muted-foreground mb-2">범례</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span className="text-foreground">정상</span>
+          <div className="absolute bottom-8 right-4 z-10 flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 bg-card/90 backdrop-blur-sm shadow-lg"
+              onClick={handleZoomIn}
+              aria-label="지도 확대"
+              title="지도 확대"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 bg-card/90 backdrop-blur-sm shadow-lg"
+              onClick={handleZoomOut}
+              aria-label="지도 축소"
+              title="지도 축소"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 bg-card/90 backdrop-blur-sm shadow-lg"
+              onClick={handleMoveToSelection}
+              aria-label="선택 시설로 이동"
+              title="선택 시설로 이동"
+            >
+              <Locate className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={isHybrid ? 'default' : 'secondary'}
+              size="icon"
+              className="h-8 w-8 backdrop-blur-sm shadow-lg"
+              onClick={handleToggleMapType}
+              aria-label="지도 유형 전환"
+              title="일반 지도와 스카이뷰 전환"
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 rounded-full bg-amber-500" />
-            <span className="text-foreground">점검요망</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 rounded-full bg-rose-500" />
-            <span className="text-foreground">침수위험</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 rounded-full bg-slate-500" />
-            <span className="text-foreground">오프라인</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Map Controls */}
-      <div className="absolute bottom-16 right-4 z-10 flex flex-col gap-2">
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-card/90 backdrop-blur-sm">
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-card/90 backdrop-blur-sm">
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-card/90 backdrop-blur-sm">
-          <Locate className="h-4 w-4" />
-        </Button>
-        <Button variant="secondary" size="icon" className="h-8 w-8 bg-card/90 backdrop-blur-sm">
-          <Layers className="h-4 w-4" />
-        </Button>
-      </div>
+        </>
+      )}
     </div>
   )
 }

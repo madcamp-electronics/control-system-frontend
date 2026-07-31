@@ -172,3 +172,74 @@
 .pulse-ring {
   animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
+
+/* Kakao Map device overlays */
+.kakao-device-marker {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  transition: transform 150ms ease;
+}
+
+.kakao-device-marker:hover,
+.kakao-device-marker:focus-visible {
+  transform: scale(1.18);
+  outline: none;
+}
+
+.kakao-device-marker__dot,
+.kakao-device-marker__pulse {
+  grid-area: 1 / 1;
+  display: block;
+  border-radius: 9999px;
+}
+
+.kakao-device-marker__dot {
+  width: 15px;
+  height: 15px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 45%);
+}
+
+.kakao-device-marker__pulse {
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+}
+
+.kakao-device-marker--normal .kakao-device-marker__dot {
+  background: rgb(16 185 129);
+}
+
+.kakao-device-marker--warning .kakao-device-marker__dot {
+  background: rgb(245 158 11);
+}
+
+.kakao-device-marker--danger .kakao-device-marker__dot {
+  background: rgb(244 63 94);
+}
+
+.kakao-device-marker--danger .kakao-device-marker__pulse {
+  background: rgb(244 63 94 / 45%);
+  opacity: 1;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.kakao-device-marker--offline .kakao-device-marker__dot {
+  background: rgb(100 116 139);
+}
+
+.kakao-device-marker--selected {
+  transform: scale(1.35);
+}
+
+.kakao-device-marker--selected .kakao-device-marker__dot {
+  box-shadow:
+    0 0 0 5px rgb(255 255 255 / 50%),
+    0 3px 10px rgb(15 23 42 / 55%);
+}
