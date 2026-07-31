@@ -1,28 +1,29 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { AlertCircle } from 'lucide-react'
+import { Megaphone, Circle } from 'lucide-react'
 
 export function NoticeBar() {
   return (
-    <div className="flex items-center justify-between px-6 py-2.5 bg-card border-t border-border">
-      <div className="flex items-center gap-4">
-        <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          공지사항
-        </Badge>
-        <p className="text-sm text-muted-foreground">
-          강우 예보에 따른 비상근무 체계 가동 안내 (05/10 09:00)
-          <span className="mx-3 text-border">|</span>
-          장비점검 안내: 05/12(목) 02:00 ~ 04:00 (일부 서비스 제한)
+    <footer className="flex h-8 shrink-0 items-center justify-between border-t border-border bg-card px-4 text-[10px] 2xl:px-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex shrink-0 items-center gap-1.5 font-medium text-amber-300">
+          <Megaphone className="h-3 w-3" />
+          운영 공지
+        </span>
+        <span className="h-3 w-px bg-border" />
+        <p className="truncate text-muted-foreground">
+          강우 예보에 따른 비상근무 체계 가동
+          <span className="mx-2 text-border-strong">·</span>
+          정기 장비점검 05/12 02:00–04:00
         </p>
       </div>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <a href="#" className="hover:text-foreground transition-colors">개인정보처리방침</a>
-        <span className="text-border">|</span>
-        <a href="#" className="hover:text-foreground transition-colors">이용약관</a>
-        <span className="ml-4 text-foreground font-mono">v2.1.0</span>
+      <div className="ml-4 flex shrink-0 items-center gap-3 text-muted-foreground">
+        <span className="hidden items-center gap-1.5 xl:flex">
+          <Circle className="h-1.5 w-1.5 fill-emerald-400 text-emerald-400" />
+          전체 시스템 정상
+        </span>
+        <span className="font-mono text-[9px] tabular-nums">BUILD 2.1.0</span>
       </div>
-    </div>
+    </footer>
   )
 }

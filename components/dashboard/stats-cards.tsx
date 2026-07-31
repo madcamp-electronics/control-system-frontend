@@ -1,118 +1,114 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import type { SystemStats } from '@/lib/types'
-import { 
-  LayoutGrid, 
-  CheckCircle2, 
-  AlertTriangle, 
-  AlertCircle, 
+import {
+  Database,
+  CircleCheck,
+  TriangleAlert,
+  OctagonAlert,
   WifiOff,
-  Bell
+  BellRing,
 } from 'lucide-react'
 
 interface StatsCardsProps {
   stats: SystemStats
 }
 
-interface StatCardProps {
+interface StatItem {
   label: string
   value: number
   unit: string
-  subLabel?: string
-  subValue?: string
+  meta: string
+  color: string
   icon: React.ReactNode
-  iconBg: string
-  trend?: {
-    value: number
-    positive?: boolean
-  }
-}
-
-function StatCard({ label, value, unit, subLabel, subValue, icon, iconBg, trend }: StatCardProps) {
-  return (
-    <div className="flex items-center gap-4 px-5 py-4 bg-card rounded-xl border border-border">
-      <div className={cn("flex h-12 w-12 items-center justify-center rounded-xl", iconBg)}>
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-muted-foreground mb-1">{label}</p>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold text-foreground tracking-tight">
-            {value.toLocaleString()}
-          </span>
-          <span className="text-sm text-muted-foreground">{unit}</span>
-        </div>
-        {(subLabel || subValue) && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {subLabel} {subValue && <span className="text-foreground">{subValue}</span>}
-          </p>
-        )}
-      </div>
-      {trend && (
-        <div className={cn(
-          "text-xs font-medium",
-          trend.positive ? "text-emerald-400" : "text-amber-400"
-        )}>
-          {trend.positive ? '+' : ''}{trend.value}
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function StatsCards({ stats }: StatsCardsProps) {
+  const ratio = (value: number) =>
+    `${((value / stats.totalDevices) * 100).toFixed(1)}%`
+
+  const items: StatItem[] = [
+    {
+      label: '전체 시설',
+      value: stats.totalDevices,
+      unit: '개소',
+      meta: '강남구 관제 대상',
+      color: 'text-primary',
+      icon: <Database />,
+    },
+    {
+      label: '정상 운영',
+      value: stats.normalCount,
+      unit: '개소',
+      meta: ratio(stats.normalCount),
+      color: 'text-emerald-400',
+      icon: <CircleCheck />,
+    },
+    {
+      label: '점검 필요',
+      value: stats.warningCount,
+      unit: '개소',
+      meta: ratio(stats.warningCount),
+      color: 'text-amber-400',
+      icon: <TriangleAlert />,
+    },
+    {
+      label: '침수 위험',
+      value: stats.dangerCount,
+      unit: '개소',
+      meta: ratio(stats.dangerCount),
+      color: 'text-rose-400',
+      icon: <OctagonAlert />,
+    },
+    {
+      label: '통신 이상',
+      value: stats.offlineCount,
+      unit: '개소',
+      meta: ratio(stats.offlineCount),
+      color: 'text-slate-400',
+      icon: <WifiOff />,
+    },
+    {
+      label: '금일 신규 알림',
+      value: stats.todayAlerts,
+      unit: '건',
+      meta: `전일 대비 +${stats.alertChange}`,
+      color: 'text-sky-400',
+      icon: <BellRing />,
+    },
+  ]
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-      <StatCard
-        label="전체 빗물받이"
-        value={stats.totalDevices}
-        unit="개"
-        subLabel="전체 시설"
-        icon={<LayoutGrid className="h-5 w-5 text-primary" />}
-        iconBg="bg-primary/10"
-      />
-      <StatCard
-        label="정상"
-        value={stats.normalCount}
-        unit="개"
-        subValue={`${((stats.normalCount / stats.totalDevices) * 100).toFixed(1)}%`}
-        icon={<CheckCircle2 className="h-5 w-5 text-emerald-400" />}
-        iconBg="bg-emerald-400/10"
-      />
-      <StatCard
-        label="점검요망"
-        value={stats.warningCount}
-        unit="개"
-        subValue={`${((stats.warningCount / stats.totalDevices) * 100).toFixed(1)}%`}
-        icon={<AlertTriangle className="h-5 w-5 text-amber-400" />}
-        iconBg="bg-amber-400/10"
-      />
-      <StatCard
-        label="침수위험"
-        value={stats.dangerCount}
-        unit="개"
-        subValue={`${((stats.dangerCount / stats.totalDevices) * 100).toFixed(1)}%`}
-        icon={<AlertCircle className="h-5 w-5 text-rose-400" />}
-        iconBg="bg-rose-400/10"
-      />
-      <StatCard
-        label="오프라인"
-        value={stats.offlineCount}
-        unit="개"
-        subValue={`${((stats.offlineCount / stats.totalDevices) * 100).toFixed(1)}%`}
-        icon={<WifiOff className="h-5 w-5 text-slate-400" />}
-        iconBg="bg-slate-400/10"
-      />
-      <StatCard
-        label="오늘 신규 알림"
-        value={stats.todayAlerts}
-        unit="건"
-        subLabel="전일 대비"
-        icon={<Bell className="h-5 w-5 text-chart-2" />}
-        iconBg="bg-chart-2/10"
-        trend={{ value: stats.alertChange, positive: false }}
-      />
+    <div className="grid h-full grid-cols-6 overflow-hidden rounded-lg border border-border bg-card shadow-panel">
+      {items.map((item, index) => (
+        <article
+          key={item.label}
+          className="relative flex min-w-0 items-center gap-3 border-r border-border px-3 last:border-r-0 2xl:px-4"
+        >
+          <span
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-md bg-secondary/80 ${item.color} [&>svg]:h-4 [&>svg]:w-4`}
+          >
+            {item.icon}
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-[10px] font-medium text-muted-foreground">
+                {item.label}
+              </p>
+              {index > 1 && index < 5 && (
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${item.color.replace('text-', 'bg-')}`} />
+              )}
+            </div>
+            <div className="mt-0.5 flex items-baseline gap-1.5">
+              <strong className="font-mono text-xl font-semibold tracking-[-0.04em] tabular-nums text-foreground 2xl:text-[22px]">
+                {item.value.toLocaleString()}
+              </strong>
+              <span className="text-[10px] text-muted-foreground">{item.unit}</span>
+            </div>
+            <p className="truncate text-[9px] text-muted-foreground/75">{item.meta}</p>
+          </div>
+        </article>
+      ))}
     </div>
   )
 }

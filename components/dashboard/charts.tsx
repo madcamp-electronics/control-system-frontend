@@ -1,20 +1,19 @@
 'use client'
 
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  Area,
   ComposedChart,
-  Bar
+  Bar,
 } from 'recharts'
 import type { WaterLevelHistory, RainfallHistory } from '@/lib/types'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ChartNoAxesCombined } from 'lucide-react'
 
 interface WaterLevelChartProps {
   data: WaterLevelHistory[]
@@ -25,156 +24,150 @@ interface RainfallChartProps {
   data: RainfallHistory[]
 }
 
+const tooltipStyle = {
+  backgroundColor: 'var(--popover)',
+  border: '1px solid var(--border-strong)',
+  borderRadius: '6px',
+  color: 'var(--foreground)',
+  fontSize: '10px',
+  boxShadow: '0 8px 24px rgb(0 0 0 / 25%)',
+}
+
 export function WaterLevelChart({ data, deviceId }: WaterLevelChartProps) {
+  const currentLevel = data.at(-1)?.level ?? 0
+
   return (
-    <div className="flex flex-col h-full bg-card rounded-xl border border-border">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">
-          수위 변화 추이
-          {deviceId && <span className="ml-2 text-xs text-muted-foreground font-mono">({deviceId})</span>}
-        </h3>
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-chart-1" />
-            <span className="text-muted-foreground">수위 (cm)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-rose-500 opacity-50" style={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: 'rgb(244 63 94)' }} />
-            <span className="text-muted-foreground">위험수위 (20cm)</span>
-          </div>
+    <section className="ops-panel">
+      <header className="ops-panel__header min-h-12 px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <ChartNoAxesCombined className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <h2 className="text-[13px] font-semibold tracking-[-0.02em] text-foreground">수위 추이</h2>
+          {deviceId && (
+            <span className="truncate font-mono text-[8px] text-muted-foreground">{deviceId}</span>
+          )}
         </div>
-      </div>
-      
-      <div className="flex-1 p-4 pt-2">
+        <div className="flex shrink-0 items-baseline gap-1">
+          <strong className="font-mono text-[13px] font-semibold tabular-nums text-foreground">
+            {currentLevel.toFixed(1)}
+          </strong>
+          <span className="text-[8px] text-muted-foreground">cm</span>
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 px-2 pb-1 pt-1.5">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-            <XAxis 
-              dataKey="time" 
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+          <LineChart data={data} margin={{ top: 5, right: 9, left: -28, bottom: 0 }}>
+            <CartesianGrid
+              vertical={false}
+              stroke="var(--border)"
+              strokeDasharray="2 4"
             />
-            <YAxis 
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            <XAxis
+              dataKey="time"
+              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
               tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+              axisLine={false}
+              minTickGap={16}
+            />
+            <YAxis
+              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
+              tickLine={false}
+              axisLine={false}
               domain={[0, 25]}
-              unit="cm"
+              tickCount={4}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
+              contentStyle={tooltipStyle}
+              labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '2px' }}
+              formatter={(value) => [`${Number(value).toFixed(1)} cm`, '수위']}
             />
-            <ReferenceLine 
-              y={20} 
-              stroke="rgb(244 63 94)" 
-              strokeDasharray="5 5" 
-              strokeOpacity={0.7}
-              label={{ 
-                value: '위험수위', 
-                position: 'right', 
-                fill: 'rgb(244 63 94)', 
-                fontSize: 10 
-              }}
+            <ReferenceLine
+              y={20}
+              stroke="var(--destructive)"
+              strokeDasharray="3 3"
+              strokeOpacity={0.8}
             />
             <Line
               type="monotone"
               dataKey="level"
-              stroke="hsl(var(--chart-1))"
+              stroke="var(--chart-1)"
               strokeWidth={2}
-              dot={{ fill: 'hsl(var(--chart-1))', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
+              dot={false}
+              activeDot={{ r: 3, fill: 'var(--chart-1)', stroke: 'var(--card)', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </section>
   )
 }
 
 export function RainfallChart({ data }: RainfallChartProps) {
+  const currentRainfall = data.at(-1)?.rainfall ?? 0
+
   return (
-    <div className="flex flex-col h-full bg-card rounded-xl border border-border">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">강우량 / 시설 데이터</h3>
-        <Tabs defaultValue="rainfall" className="h-7">
-          <TabsList className="h-7 p-0.5">
-            <TabsTrigger value="rainfall" className="h-6 text-xs px-2">강우량</TabsTrigger>
-            <TabsTrigger value="level" className="h-6 text-xs px-2">수위(평균)</TabsTrigger>
-            <TabsTrigger value="blockage" className="h-6 text-xs px-2">막힘(평균)</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      
-      <div className="flex-1 p-4 pt-2">
-        <div className="flex items-center gap-4 text-xs mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-chart-2" />
-            <span className="text-muted-foreground">강우량 (mm/h)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-0.5 bg-chart-3" />
-            <span className="text-muted-foreground">누적 강우량 (mm)</span>
-          </div>
+    <section className="ops-panel">
+      <header className="ops-panel__header min-h-12 px-4">
+        <div className="flex items-center gap-2">
+          <ChartNoAxesCombined className="h-3.5 w-3.5 text-sky-400" />
+          <h2 className="text-[13px] font-semibold tracking-[-0.02em] text-foreground">강우 분석</h2>
         </div>
-        
-        <ResponsiveContainer width="100%" height="90%">
-          <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-            <XAxis 
-              dataKey="time" 
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
+        <div className="flex items-baseline gap-1">
+          <strong className="font-mono text-[13px] font-semibold tabular-nums text-sky-300">
+            {currentRainfall.toFixed(1)}
+          </strong>
+          <span className="text-[8px] text-muted-foreground">mm/h</span>
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 px-2 pb-1 pt-1.5">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 5, right: 9, left: -28, bottom: 0 }}>
+            <CartesianGrid
+              vertical={false}
+              stroke="var(--border)"
+              strokeDasharray="2 4"
             />
-            <YAxis 
-              yAxisId="left"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            <XAxis
+              dataKey="time"
+              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
               tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
-              domain={[0, 'auto']}
+              axisLine={false}
+              minTickGap={16}
             />
-            <YAxis 
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            <YAxis
+              yAxisId="rainfall"
+              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
               tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
-              domain={[0, 'auto']}
+              axisLine={false}
+              tickCount={4}
             />
+            <YAxis yAxisId="accumulated" orientation="right" hide />
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
+              contentStyle={tooltipStyle}
+              labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '2px' }}
             />
-            <Bar 
-              yAxisId="left"
-              dataKey="rainfall" 
-              fill="hsl(var(--chart-2))" 
-              opacity={0.8}
+            <Bar
+              yAxisId="rainfall"
+              dataKey="rainfall"
+              name="시간당 강우"
+              fill="var(--chart-2)"
+              opacity={0.72}
               radius={[2, 2, 0, 0]}
+              maxBarSize={16}
             />
             <Line
-              yAxisId="right"
+              yAxisId="accumulated"
               type="monotone"
               dataKey="accumulated"
-              stroke="hsl(var(--chart-3))"
-              strokeWidth={2}
-              dot={{ fill: 'hsl(var(--chart-3))', strokeWidth: 0, r: 3 }}
+              name="누적 강우"
+              stroke="var(--chart-3)"
+              strokeWidth={1.5}
+              dot={false}
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </section>
   )
 }

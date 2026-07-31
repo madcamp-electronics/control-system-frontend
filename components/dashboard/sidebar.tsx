@@ -2,18 +2,15 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { 
-  LayoutDashboard, 
-  Map, 
-  Bell, 
-  ClipboardList, 
-  Wrench, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Bell,
+  Wrench,
+  BarChart3,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   Droplets,
-  Phone
+  Menu,
+  Headphones,
 } from 'lucide-react'
 
 interface NavItem {
@@ -24,13 +21,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: '대시보드', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { id: 'map', label: '통합관제지도', icon: <Map className="h-5 w-5" /> },
-  { id: 'alerts', label: '이상알림', icon: <Bell className="h-5 w-5" />, badge: 12 },
-  { id: 'tasks', label: '작업지시', icon: <ClipboardList className="h-5 w-5" /> },
-  { id: 'equipment', label: '장비관리', icon: <Wrench className="h-5 w-5" /> },
-  { id: 'analytics', label: '데이터분석', icon: <BarChart3 className="h-5 w-5" /> },
-  { id: 'settings', label: '시스템설정', icon: <Settings className="h-5 w-5" /> },
+  { id: 'dashboard', label: '대시보드', icon: <LayoutDashboard /> },
+  { id: 'alerts', label: '이상알림', icon: <Bell />, badge: 12 },
+  { id: 'analytics', label: '데이터분석', icon: <BarChart3 /> },
+  { id: 'equipment', label: '장비관리', icon: <Wrench /> },
+  { id: 'settings', label: '시스템설정', icon: <Settings /> },
 ]
 
 interface SidebarProps {
@@ -42,87 +37,113 @@ export function Sidebar({ activeNav, onNavChange }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <aside 
+    <aside
       className={cn(
-        "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
-        collapsed ? "w-16" : "w-56"
+        'relative z-30 flex shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out',
+        collapsed ? 'w-[68px]' : 'w-[224px] 2xl:w-[236px]'
       )}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-          <Droplets className="h-5 w-5 text-primary" />
-        </div>
+      <div
+        className={cn(
+          'flex h-[60px] shrink-0 items-center border-b border-sidebar-border',
+          collapsed ? 'justify-center px-2' : 'gap-2 px-3'
+        )}
+      >
         {!collapsed && (
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">스마트 빗물받이</span>
-            <span className="text-xs text-muted-foreground">통합 관제</span>
+          <div className="flex min-w-0 flex-1 items-center gap-3 px-1">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10">
+              <Droplets className="h-[18px] w-[18px] text-primary" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[13px] font-semibold tracking-[-0.01em] text-sidebar-foreground">
+                스마트 빗물받이
+              </p>
+              <p className="mt-0.5 text-[10px] tracking-[0.08em] text-muted-foreground">
+                CONTROL CENTER
+              </p>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onNavChange(item.id)}
-            className={cn(
-              "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              activeNav === item.id
-                ? "bg-sidebar-accent text-sidebar-primary"
-                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
-            )}
-          >
-            {item.icon}
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-[11px] font-semibold text-destructive-foreground">
-                    {item.badge}
-                  </span>
-                )}
-              </>
-            )}
-            {collapsed && item.badge && (
-              <span className="absolute left-10 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                {item.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Collapse Toggle */}
-      <div className="px-2 py-2">
         <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent/50 transition-colors"
+          type="button"
+          onClick={() => setCollapsed((current) => !current)}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          aria-label={collapsed ? '메뉴 펼치기' : '메뉴 접기'}
+          title={collapsed ? '메뉴 펼치기' : '메뉴 접기'}
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <ChevronLeft className="h-4 w-4" />
-              <span>메뉴 접기</span>
-            </>
-          )}
+          <Menu className="h-[19px] w-[19px]" />
         </button>
       </div>
 
-      {/* Contact Info */}
-      {!collapsed && (
-        <div className="px-4 py-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <div className="text-xs">
-              <p className="text-muted-foreground">관제센터 24시간 운영</p>
-              <p className="font-semibold text-foreground">02-1234-5678</p>
+      <div className={cn('px-3 pb-2 pt-4', collapsed && 'px-2')}>
+        {!collapsed && (
+          <p className="px-2 text-[10px] font-medium tracking-[0.12em] text-muted-foreground/70">
+            OPERATIONS
+          </p>
+        )}
+      </div>
+
+      <nav className={cn('flex-1 space-y-1 px-3', collapsed && 'px-2')}>
+        {navItems.map((item) => {
+          const active = activeNav === item.id
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavChange(item.id)}
+              className={cn(
+                'group relative flex h-10 w-full items-center rounded-md text-[13px] font-medium transition-colors',
+                collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                active
+                  ? 'bg-sidebar-accent text-sidebar-primary'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+              )}
+              aria-label={item.label}
+              title={collapsed ? item.label : undefined}
+            >
+              {active && (
+                <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-sidebar-primary" />
+              )}
+              <span className="[&>svg]:h-[18px] [&>svg]:w-[18px]">{item.icon}</span>
+              {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+              {item.badge && (
+                <span
+                  className={cn(
+                    'grid min-w-5 place-items-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold leading-5 text-white',
+                    collapsed && 'absolute right-0 top-0 h-4 min-w-4 px-1 text-[9px] leading-4'
+                  )}
+                >
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </nav>
+
+      <div className={cn('border-t border-sidebar-border p-3', collapsed && 'px-2')}>
+        <div
+          className={cn(
+            'flex items-center rounded-md border border-transparent bg-sidebar-accent/35',
+            collapsed ? 'h-10 justify-center' : 'gap-3 px-3 py-2.5'
+          )}
+        >
+          <span className="relative">
+            <Headphones className="h-[17px] w-[17px] text-muted-foreground" />
+            <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-sidebar" />
+          </span>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">관제센터 · 24시간 운영</p>
+              <p className="mt-0.5 font-mono text-[12px] font-medium text-sidebar-foreground">
+                02-1234-5678
+              </p>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </aside>
   )
 }
