@@ -1,0 +1,106 @@
+import type {
+  AlertListDto,
+  ApiResponse,
+  DashboardStatisticsDto,
+  DrainListDto,
+  LatestSensorReadingDto,
+  LoginResponseDto,
+  SensorHistoryDto,
+  SignupResponseDto,
+} from './types'
+
+export const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+).replace(/\/$/, '')
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message)
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  accessToken?: string,
+): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (options.body && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json')
+  }
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+  })
+
+  let body: ApiResponse<T> | null = null
+  try {
+    body = (await response.json()) as ApiResponse<T>
+  } catch {
+    // 연결 실패나 비 JSON 오류 응답은 아래 공통 오류로 처리합니다.
+  }
+
+  if (!response.ok || !body?.success) {
+    throw new ApiError(body?.message || `API 요청 실패 (${response.status})`, response.status)
+  }
+
+  return body.data
+}
+
+export function login(username: string, password: string) {
+  return request<LoginResponseDto>('/api/v1/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  })
+}
+
+export function signup(input: {
+  username: string
+  password: string
+  name: string
+  phoneNumber: string
+  role: 'ROLE_ADMIN' | 'ROLE_WORKER'
+}) {
+  return request<SignupResponseDto>('/api/v1/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export function getDrains(accessToken: string) {
+  return request<DrainListDto[]>('/api/v1/drains', {}, accessToken)
+}
+
+export function getLatestSensorReadings(accessToken: string) {
+  return request<LatestSensorReadingDto[]>('/api/v1/sensors/latest', {}, accessToken)
+}
+
+export function getDashboardStatistics(accessToken: string) {
+  return request<DashboardStatisticsDto>('/api/v1/dashboard/statistics', {}, accessToken)
+}
+
+export function getAlerts(accessToken: string) {
+  return request<AlertListDto[]>('/api/v1/alerts', {}, accessToken)
+}
+
+export function getSensorHistory(
+  drainId: number,
+  startTime: string,
+  endTime: string,
+  accessToken: string,
+) {
+  const params = new URLSearchParams({ startTime, endTime })
+  return request<SensorHistoryDto[]>(
+    `/api/v1/sensors/drains/${drainId}/history?${params}`,
+    {},
+    accessToken,
+  )
+}

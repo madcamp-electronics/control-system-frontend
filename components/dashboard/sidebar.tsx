@@ -20,9 +20,9 @@ interface NavItem {
   badge?: number
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { id: 'dashboard', label: '대시보드', icon: <LayoutDashboard /> },
-  { id: 'alerts', label: '이상알림', icon: <Bell />, badge: 12 },
+  { id: 'alerts', label: '이상알림', icon: <Bell /> },
   { id: 'analytics', label: '데이터분석', icon: <BarChart3 /> },
   { id: 'equipment', label: '장비관리', icon: <Wrench /> },
   { id: 'settings', label: '시스템설정', icon: <Settings /> },
@@ -31,10 +31,14 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   activeNav: string
   onNavChange: (nav: string) => void
+  alertCount?: number
 }
 
-export function Sidebar({ activeNav, onNavChange }: SidebarProps) {
+export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const navItems = baseNavItems.map((item) =>
+    item.id === 'alerts' ? { ...item, badge: alertCount || undefined } : item
+  )
 
   return (
     <aside

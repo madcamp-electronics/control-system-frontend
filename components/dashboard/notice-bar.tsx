@@ -12,17 +12,15 @@ export function NoticeBar() {
         </span>
         <span className="h-3 w-px bg-border" />
         <p className="truncate text-muted-foreground">
-          강우 예보에 따른 비상근무 체계 가동
-          <span className="mx-2 text-border-strong">·</span>
-          정기 장비점검 05/12 02:00–04:00
+          초음파 측정값은 빗물받이 전체 높이에서 센서 감지 거리를 뺀 수위입니다.
         </p>
       </div>
       <div className="ml-4 flex shrink-0 items-center gap-3 text-muted-foreground">
         <span className="hidden items-center gap-1.5 xl:flex">
           <Circle className="h-1.5 w-1.5 fill-emerald-400 text-emerald-400" />
-          전체 시스템 정상
+          센서 API 연동
         </span>
-        <span className="font-mono text-[9px] tabular-nums">BUILD 2.1.0</span>
+        <span className="font-mono text-[9px] tabular-nums">SENSOR MVP</span>
       </div>
     </footer>
   )

@@ -9,19 +9,13 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  ComposedChart,
-  Bar,
 } from 'recharts'
-import type { WaterLevelHistory, RainfallHistory } from '@/lib/types'
+import type { WaterLevelHistory } from '@/lib/types'
 import { ChartNoAxesCombined } from 'lucide-react'
 
 interface WaterLevelChartProps {
   data: WaterLevelHistory[]
-  deviceId?: string
-}
-
-interface RainfallChartProps {
-  data: RainfallHistory[]
+  deviceId?: number
 }
 
 const tooltipStyle = {
@@ -35,6 +29,8 @@ const tooltipStyle = {
 
 export function WaterLevelChart({ data, deviceId }: WaterLevelChartProps) {
   const currentLevel = data.at(-1)?.level ?? 0
+  const totalDepth = data[0]?.dangerLevel ?? 0
+  const yAxisMax = Math.max(10, Math.ceil(Math.max(totalDepth, ...data.map((item) => item.level)) * 1.1))
 
   return (
     <section className="ops-panel">
@@ -73,7 +69,7 @@ export function WaterLevelChart({ data, deviceId }: WaterLevelChartProps) {
               tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
               tickLine={false}
               axisLine={false}
-              domain={[0, 25]}
+              domain={[0, yAxisMax]}
               tickCount={4}
             />
             <Tooltip
@@ -82,7 +78,7 @@ export function WaterLevelChart({ data, deviceId }: WaterLevelChartProps) {
               formatter={(value) => [`${Number(value).toFixed(1)} cm`, '수위']}
             />
             <ReferenceLine
-              y={20}
+              y={totalDepth}
               stroke="var(--destructive)"
               strokeDasharray="3 3"
               strokeOpacity={0.8}
@@ -96,76 +92,6 @@ export function WaterLevelChart({ data, deviceId }: WaterLevelChartProps) {
               activeDot={{ r: 3, fill: 'var(--chart-1)', stroke: 'var(--card)', strokeWidth: 2 }}
             />
           </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </section>
-  )
-}
-
-export function RainfallChart({ data }: RainfallChartProps) {
-  const currentRainfall = data.at(-1)?.rainfall ?? 0
-
-  return (
-    <section className="ops-panel">
-      <header className="ops-panel__header min-h-12 px-4">
-        <div className="flex items-center gap-2">
-          <ChartNoAxesCombined className="h-3.5 w-3.5 text-sky-400" />
-          <h2 className="text-[13px] font-semibold tracking-[-0.02em] text-foreground">강우 분석</h2>
-        </div>
-        <div className="flex items-baseline gap-1">
-          <strong className="font-mono text-[13px] font-semibold tabular-nums text-sky-300">
-            {currentRainfall.toFixed(1)}
-          </strong>
-          <span className="text-[8px] text-muted-foreground">mm/h</span>
-        </div>
-      </header>
-
-      <div className="min-h-0 flex-1 px-2 pb-1 pt-1.5">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 5, right: 9, left: -28, bottom: 0 }}>
-            <CartesianGrid
-              vertical={false}
-              stroke="var(--border)"
-              strokeDasharray="2 4"
-            />
-            <XAxis
-              dataKey="time"
-              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={16}
-            />
-            <YAxis
-              yAxisId="rainfall"
-              tick={{ fontSize: 8, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              tickCount={4}
-            />
-            <YAxis yAxisId="accumulated" orientation="right" hide />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              labelStyle={{ color: 'var(--muted-foreground)', marginBottom: '2px' }}
-            />
-            <Bar
-              yAxisId="rainfall"
-              dataKey="rainfall"
-              name="시간당 강우"
-              fill="var(--chart-2)"
-              opacity={0.72}
-              radius={[2, 2, 0, 0]}
-              maxBarSize={16}
-            />
-            <Line
-              yAxisId="accumulated"
-              type="monotone"
-              dataKey="accumulated"
-              name="누적 강우"
-              stroke="var(--chart-3)"
-              strokeWidth={1.5}
-              dot={false}
-            />
-          </ComposedChart>
         </ResponsiveContainer>
       </div>
     </section>

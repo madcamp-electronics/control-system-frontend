@@ -11,8 +11,8 @@ import {
   X,
   Waves,
   Activity,
-  Gauge,
-  Trash2,
+  Battery,
+  Ruler,
   Wifi,
   Clock3,
 } from 'lucide-react'
@@ -461,6 +461,9 @@ interface DevicePopupProps {
 
 function DevicePopup({ device, onClose }: DevicePopupProps) {
   const status = getStatusAppearance(device.status)
+  const fillRatio = device.waterLevel == null || device.totalDepth <= 0
+    ? null
+    : Math.min(100, Math.max(0, (device.waterLevel / device.totalDepth) * 100))
 
   return (
     <aside
@@ -506,51 +509,53 @@ function DevicePopup({ device, onClose }: DevicePopupProps) {
           <PopupMetric
             icon={<Waves />}
             label="현재 수위"
-            value={`${device.waterLevel.toFixed(1)} cm`}
-            alert={device.floodRisk >= 70}
+            value={device.waterLevel == null ? '미수신' : `${device.waterLevel.toFixed(1)} cm`}
+          />
+          <PopupMetric
+            icon={<Ruler />}
+            label="전체 높이"
+            value={`${device.totalDepth.toFixed(1)} cm`}
           />
           <PopupMetric
             icon={<Activity />}
-            label="5분 변화"
-            value={`${device.waterLevelChange > 0 ? '+' : ''}${device.waterLevelChange.toFixed(1)} cm`}
-            alert={device.waterLevelChange >= 1}
+            label="수위 비율"
+            value={fillRatio == null ? '-' : `${fillRatio.toFixed(0)}%`}
           />
           <PopupMetric
-            icon={<Gauge />}
-            label="위험도"
-            value={`${device.floodRisk}%`}
-            alert={device.floodRisk >= 70}
-          />
-          <PopupMetric
-            icon={<Trash2 />}
-            label="이물질"
-            value={`${device.debrisLevel}%`}
-            alert={device.debrisLevel >= 70}
+            icon={<Battery />}
+            label="배터리"
+            value={device.batteryLevel == null ? '-' : `${device.batteryLevel.toFixed(0)}%`}
+            alert={device.batteryLevel != null && device.batteryLevel <= 10}
           />
           <PopupMetric
             icon={<Wifi />}
             label="통신"
-            value={device.connectionStatus === 'connected' ? '정상' : '단절'}
+            value={device.signalStrength == null ? '미수신' : `${device.signalStrength} dBm`}
             alert={device.connectionStatus === 'disconnected'}
           />
           <PopupMetric
             icon={<Clock3 />}
             label="최근 수신"
-            value={device.lastUpdated.slice(11)}
+            value={device.lastUpdated ? device.lastUpdated.replace('T', ' ').slice(11, 19) : '-'}
           />
         </div>
+        {device.imageUrl && (
+          <a
+            href={device.imageUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 flex h-8 items-center justify-center rounded-md border border-border bg-secondary/35 text-[9px] font-medium text-primary transition-colors hover:bg-secondary"
+          >
+            최근 센서 사진 열기
+          </a>
+        )}
       </div>
 
       <footer className="flex h-9 items-center justify-between border-t border-border bg-secondary/25 px-3">
         <span className="text-[9px] text-muted-foreground">
           마커를 선택해 시설 정보를 전환할 수 있습니다.
         </span>
-        <button
-          type="button"
-          className="text-[9px] font-semibold text-primary transition-colors hover:text-primary/75"
-        >
-          상세 이력
-        </button>
+        <span className="font-mono text-[9px] text-muted-foreground">ID {device.id}</span>
       </footer>
     </aside>
   )

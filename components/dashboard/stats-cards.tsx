@@ -25,7 +25,7 @@ interface StatItem {
 
 export function StatsCards({ stats }: StatsCardsProps) {
   const ratio = (value: number) =>
-    `${((value / stats.totalDevices) * 100).toFixed(1)}%`
+    stats.totalDevices === 0 ? '0.0%' : `${((value / stats.totalDevices) * 100).toFixed(1)}%`
 
   const items: StatItem[] = [
     {
@@ -69,10 +69,10 @@ export function StatsCards({ stats }: StatsCardsProps) {
       icon: <WifiOff />,
     },
     {
-      label: '금일 신규 알림',
-      value: stats.todayAlerts,
+      label: '활성 알림',
+      value: stats.activeAlerts,
       unit: '건',
-      meta: `전일 대비 +${stats.alertChange}`,
+      meta: '현재 미해결',
       color: 'text-sky-400',
       icon: <BellRing />,
     },

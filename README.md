@@ -19,10 +19,12 @@ npm install
 
 ```env
 APP_URL=http://localhost:3000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 NEXT_PUBLIC_KAKAO_MAP_APP_KEY=your_kakao_javascript_key
 ```
 
 - `APP_URL`: 개발/운영 서버 주소. 예: `http://localhost:3000`
+- `NEXT_PUBLIC_API_BASE_URL`: Spring Boot 백엔드 주소. 예: `http://localhost:8080`
 - `NEXT_PUBLIC_KAKAO_MAP_APP_KEY`: 카카오 디벨로퍼스에서 발급한 JavaScript 키
 
 카카오 디벨로퍼스 앱의 카카오맵 API를 활성화하고, JavaScript 키 설정의

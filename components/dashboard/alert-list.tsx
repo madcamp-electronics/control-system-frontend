@@ -6,7 +6,7 @@ import { ArrowUpRight, Radio } from 'lucide-react'
 
 interface AlertListProps {
   alerts: Alert[]
-  onSelectAlert: (deviceId: string) => void
+  onSelectAlert: (deviceId: number) => void
 }
 
 function getAlertStyle(type: Alert['type']) {
