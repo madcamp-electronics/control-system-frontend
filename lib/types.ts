@@ -22,10 +22,47 @@ export interface DrainListDto {
   latestDevicePhotoUrl: string | null
 }
 
+export interface DrainWorkPhotoDto {
+  alertId: number
+  status: 'ACTIVE' | 'PROCESSING' | 'RESOLVED'
+  beforePhotoUrl: string | null
+  afterPhotoUrl: string | null
+  createdAt: string
+  resolvedAt: string | null
+}
+
+export interface DrainDetailDto extends DrainListDto {
+  trashLevelThreshold: number
+  coverDistanceThreshold: number
+  workPhotos: DrainWorkPhotoDto[]
+}
+
+export interface DrainCreateInput {
+  address: string
+  latitude: number
+  longitude: number
+  totalDepth: number
+  trashLevelThreshold: number
+  coverDistanceThreshold: number
+}
+
+export interface DrainCreateResponseDto {
+  drainId: number
+  address: string
+  registeredAt: string
+}
+
+export interface DrainUpdateInput {
+  address: string
+  trashLevelThreshold: number
+  coverDistanceThreshold: number
+}
+
 export interface LatestSensorReadingDto {
   drainId: number
   waterLevel: number
   trashLevel: number
+  coverDistance: number | null
   batteryLevel: number
   signalStrength: number
   measuredAt: string
@@ -51,15 +88,21 @@ export interface DashboardStatisticsDto {
 export interface AlertListDto {
   alertId: number
   drainId: number
+  workerId: number | null
   address: string | null
   latitude: number | null
   longitude: number | null
   riskLevel: 'NEED_INSPECTION' | 'FLOOD_RISK' | 'SENSOR_ERROR'
   status: 'ACTIVE' | 'PROCESSING' | 'RESOLVED'
+  beforePhotoUrl: string | null
+  afterPhotoUrl: string | null
   createdAt: string
+  updatedAt: string
+  resolvedAt: string | null
 }
 
 export interface LoginResponseDto {
+  userId: number
   accessToken: string
   username: string
   name: string
@@ -72,6 +115,12 @@ export interface SignupResponseDto {
   name: string
   role: 'ROLE_ADMIN' | 'ROLE_WORKER'
   registeredAt: string
+}
+
+export interface WorkerDto {
+  workerId: number
+  name: string
+  phoneNumber: string
 }
 
 export type AuthSession = LoginResponseDto
@@ -96,8 +145,14 @@ export interface DrainDevice {
 export interface Alert {
   id: number
   deviceId: number
+  workerId: number | null
   deviceName: string
+  address: string | null
   type: 'danger' | 'warning' | 'info'
+  riskLevel: AlertListDto['riskLevel']
+  status: AlertListDto['status']
+  beforePhotoUrl: string | null
+  afterPhotoUrl: string | null
   message: string
   timestamp: string
 }

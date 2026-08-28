@@ -1,13 +1,12 @@
 'use client'
 
-import { Bell, LogOut, RefreshCw, Server, UserRound } from 'lucide-react'
+import { LogOut, RefreshCw, Server, UserRound } from 'lucide-react'
 
 interface HeaderProps {
   lastUpdated: string
   onRefresh: () => void
   userName: string
   userRole: string
-  alertCount: number
   loading: boolean
   onLogout: () => void
 }
@@ -17,7 +16,6 @@ export function Header({
   onRefresh,
   userName,
   userRole,
-  alertCount,
   loading,
   onLogout,
 }: HeaderProps) {
@@ -54,17 +52,6 @@ export function Header({
       </div>
 
       <div className="ml-4 flex shrink-0 items-center gap-2">
-        <span className="relative grid h-9 w-9 place-items-center rounded-md text-muted-foreground">
-          <Bell className="h-[18px] w-[18px]" />
-          {alertCount > 0 && (
-            <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
-              {alertCount}
-            </span>
-          )}
-        </span>
-
-        <span className="mx-1 h-7 w-px bg-border" />
-
         <div className="flex h-10 items-center gap-2 px-1.5">
           <span className="grid h-8 w-8 place-items-center rounded-md border border-primary/15 bg-primary/8">
             <UserRound className="h-4 w-4 text-primary" />

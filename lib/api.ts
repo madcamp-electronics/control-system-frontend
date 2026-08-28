@@ -2,11 +2,16 @@ import type {
   AlertListDto,
   ApiResponse,
   DashboardStatisticsDto,
+  DrainCreateInput,
+  DrainCreateResponseDto,
+  DrainDetailDto,
   DrainListDto,
+  DrainUpdateInput,
   LatestSensorReadingDto,
   LoginResponseDto,
   SensorHistoryDto,
   SignupResponseDto,
+  WorkerDto,
 } from './types'
 
 export const API_BASE_URL = (
@@ -79,8 +84,38 @@ export function getDrains(accessToken: string) {
   return request<DrainListDto[]>('/api/v1/drains', {}, accessToken)
 }
 
+export function getDrainDetail(drainId: number, accessToken: string) {
+  return request<DrainDetailDto>(`/api/v1/drains/${drainId}`, {}, accessToken)
+}
+
+export function createDrain(input: DrainCreateInput, accessToken: string) {
+  return request<DrainCreateResponseDto>('/api/v1/drains', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  }, accessToken)
+}
+
+export function updateDrain(
+  drainId: number,
+  input: DrainUpdateInput,
+  accessToken: string,
+) {
+  return request<void>(`/api/v1/drains/${drainId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  }, accessToken)
+}
+
 export function getLatestSensorReadings(accessToken: string) {
   return request<LatestSensorReadingDto[]>('/api/v1/sensors/latest', {}, accessToken)
+}
+
+export function getLatestSensorReading(drainId: number, accessToken: string) {
+  return request<LatestSensorReadingDto>(
+    `/api/v1/sensors/drains/${drainId}/latest`,
+    {},
+    accessToken,
+  )
 }
 
 export function getDashboardStatistics(accessToken: string) {
@@ -89,6 +124,39 @@ export function getDashboardStatistics(accessToken: string) {
 
 export function getAlerts(accessToken: string) {
   return request<AlertListDto[]>('/api/v1/alerts', {}, accessToken)
+}
+
+export function acceptAlert(alertId: number, accessToken: string) {
+  return request<void>(`/api/v1/alerts/${alertId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'PROCESSING' }),
+  }, accessToken)
+}
+
+export function getWorkers(accessToken: string) {
+  return request<WorkerDto[]>('/api/v1/workers', {}, accessToken)
+}
+
+export function assignAlert(alertId: number, workerId: number, accessToken: string) {
+  return request<void>(`/api/v1/alerts/${alertId}/assignment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ workerId }),
+  }, accessToken)
+}
+
+export function completeAlert(
+  alertId: number,
+  beforeImageFile: File,
+  afterImageFile: File,
+  accessToken: string,
+) {
+  const body = new FormData()
+  body.set('beforeImageFile', beforeImageFile)
+  body.set('afterImageFile', afterImageFile)
+  return request<void>(`/api/v1/alerts/${alertId}/complete`, {
+    method: 'POST',
+    body,
+  }, accessToken)
 }
 
 export function getSensorHistory(

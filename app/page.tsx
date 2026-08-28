@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { BarChart3, Bell, LoaderCircle, Settings, Wrench } from 'lucide-react'
 import { AuthScreen } from '@/components/auth/auth-screen'
 import { AlertList } from '@/components/dashboard/alert-list'
+import { AlertWorkflow } from '@/components/dashboard/alert-workflow'
 import { WaterLevelChart } from '@/components/dashboard/charts'
 import { DispatchRoute } from '@/components/dashboard/dispatch-route'
+import { DrainManagement } from '@/components/dashboard/drain-management'
 import { Header } from '@/components/dashboard/header'
 import { MapView } from '@/components/dashboard/map-view'
 import { NoticeBar } from '@/components/dashboard/notice-bar'
@@ -18,6 +20,7 @@ import {
   getDrains,
   getLatestSensorReadings,
   getSensorHistory,
+  getWorkers,
 } from '@/lib/api'
 import type {
   Alert,
@@ -28,6 +31,7 @@ import type {
   DrainStatus,
   SystemStats,
   WaterLevelHistory,
+  WorkerDto,
 } from '@/lib/types'
 
 const SESSION_KEY = 'smart-drain-session'
@@ -47,6 +51,7 @@ export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState('dashboard')
   const [devices, setDevices] = useState<DrainDevice[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
+  const [workers, setWorkers] = useState<WorkerDto[]>([])
   const [stats, setStats] = useState<SystemStats>(EMPTY_STATS)
   const [selectedDevice, setSelectedDevice] = useState<DrainDevice | null>(null)
   const [history, setHistory] = useState<WaterLevelHistory[]>([])
@@ -59,7 +64,14 @@ export default function DashboardPage() {
     queueMicrotask(() => {
       try {
         const stored = localStorage.getItem(SESSION_KEY)
-        if (stored) setSession(JSON.parse(stored) as AuthSession)
+        if (stored) {
+          const parsed = JSON.parse(stored) as AuthSession
+          if (typeof parsed.userId === 'number') {
+            setSession(parsed)
+          } else {
+            localStorage.removeItem(SESSION_KEY)
+          }
+        }
       } catch {
         localStorage.removeItem(SESSION_KEY)
       } finally {
@@ -74,10 +86,11 @@ export default function DashboardPage() {
     setError(null)
 
     try {
-      const [drainDtos, latestDtos, alertDtos] = await Promise.all([
+      const [drainDtos, latestDtos, alertDtos, workerDtos] = await Promise.all([
         getDrains(session.accessToken),
         getLatestSensorReadings(session.accessToken),
         getAlerts(session.accessToken),
+        session.role === 'ROLE_ADMIN' ? getWorkers(session.accessToken) : Promise.resolve([]),
       ])
 
       const latestByDrainId = new Map(latestDtos.map((reading) => [reading.drainId, reading]))
@@ -108,6 +121,7 @@ export default function DashboardPage() {
 
       setDevices(nextDevices)
       setAlerts(nextAlerts)
+      setWorkers(workerDtos)
       setStats({
         totalDevices: nextDevices.length,
         normalCount: nextDevices.filter((device) => device.status === 'normal').length,
@@ -180,6 +194,7 @@ export default function DashboardPage() {
     setSession(null)
     setDevices([])
     setAlerts([])
+    setWorkers([])
     setSelectedDevice(null)
   }, [])
 
@@ -253,23 +268,44 @@ export default function DashboardPage() {
     <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
       <WorkspaceHeading
         icon={<Wrench />}
-        title="센서 목록"
-        description="등록 위치, 현재 수위, 배터리와 통신 상태를 확인합니다."
+        title="빗물받이 시설 관리"
+        description={session.role === 'ROLE_ADMIN'
+          ? '시설 상세 정보를 확인하고 신규 등록 또는 임계값을 수정합니다.'
+          : '시설 상세 정보와 임계값, 최근 작업 사진을 확인합니다.'}
         meta={`${devices.length}개 시설`}
       />
-      <DispatchRoute devices={devices} onSelectDevice={(device) => {
-        setSelectedDevice(device)
-        setActiveNav('dashboard')
-      }} />
+      <DrainManagement
+        devices={devices}
+        accessToken={session.accessToken}
+        isAdmin={session.role === 'ROLE_ADMIN'}
+        onChanged={loadDashboard}
+      />
     </main>
   )
 
   const renderWorkspace = () => {
     switch (activeNav) {
       case 'alerts':
-        return renderSinglePanel('이상 알림', '백엔드가 생성한 미해결 센서 알림입니다.', <Bell />, (
-          <AlertList alerts={alerts} onSelectAlert={handleSelectAlert} />
-        ))
+        return (
+          <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+            <WorkspaceHeading
+              icon={<Bell />}
+              title="이상 알림 작업 처리"
+              description={session.role === 'ROLE_WORKER'
+                ? '알림을 접수하고 작업 전·후 사진을 등록한 뒤 완료 처리합니다.'
+                : '작업자가 처리 중인 미해결 알림을 조회합니다.'}
+              meta={`${alerts.length}건`}
+            />
+            <AlertWorkflow
+              alerts={alerts}
+              accessToken={session.accessToken}
+              currentUserId={session.userId}
+              isWorker={session.role === 'ROLE_WORKER'}
+              workers={workers}
+              onChanged={loadDashboard}
+            />
+          </main>
+        )
       case 'analytics': return renderAnalytics()
       case 'equipment': return renderEquipment()
       case 'settings':
@@ -289,7 +325,6 @@ export default function DashboardPage() {
           onRefresh={() => void loadDashboard()}
           userName={session.name}
           userRole={session.role === 'ROLE_ADMIN' ? '관리자' : '현장 작업자'}
-          alertCount={alerts.length}
           loading={loading}
           onLogout={handleLogout}
         />
@@ -325,8 +360,14 @@ function toAlert(alert: AlertListDto): Alert {
   return {
     id: alert.alertId,
     deviceId: alert.drainId,
+    workerId: alert.workerId,
     deviceName: `빗물받이 #${alert.drainId}`,
+    address: alert.address,
     type,
+    riskLevel: alert.riskLevel,
+    status: alert.status,
+    beforePhotoUrl: alert.beforePhotoUrl,
+    afterPhotoUrl: alert.afterPhotoUrl,
     message,
     timestamp: formatHistoryTime(alert.createdAt),
   }
