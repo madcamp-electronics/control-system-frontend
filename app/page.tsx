@@ -219,12 +219,12 @@ export default function DashboardPage() {
   }
 
   const renderDashboard = () => (
-    <main className="grid min-h-0 flex-1 grid-rows-[76px_minmax(0,1fr)] gap-2.5 overflow-hidden p-2.5 2xl:grid-rows-[82px_minmax(0,1fr)] 2xl:gap-3 2xl:p-3">
+    <main className="flex flex-1 flex-col gap-2.5 p-2.5 md:grid md:min-h-0 md:grid-rows-[76px_minmax(0,1fr)] md:overflow-hidden 2xl:grid-rows-[82px_minmax(0,1fr)] 2xl:gap-3 2xl:p-3">
       <section aria-label="시설 현황 요약" className="min-h-0">
         <StatsCards stats={stats} />
       </section>
-      <section aria-label="센서 통합 관제" className="grid min-h-0 grid-cols-12 gap-2.5 2xl:gap-3">
-        <div className="col-span-9 min-h-0">
+      <section aria-label="센서 통합 관제" className="grid min-h-0 grid-cols-1 gap-2.5 md:grid-cols-12 2xl:gap-3">
+        <div className="h-[440px] min-h-0 md:col-span-9 md:h-auto">
           <MapView
             devices={devices}
             selectedDevice={selectedDevice}
@@ -233,7 +233,7 @@ export default function DashboardPage() {
             region="빗물받이 센서 위치"
           />
         </div>
-        <div className="col-span-3 min-h-0">
+        <div className="h-[320px] min-h-0 md:col-span-3 md:h-auto">
           <AlertList alerts={alerts} onSelectAlert={handleSelectAlert} />
         </div>
       </section>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
   )
 
   const renderAnalytics = () => (
-    <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+    <main className="flex flex-1 flex-col gap-3 p-3 md:grid md:min-h-0 md:grid-rows-[48px_minmax(0,1fr)] md:overflow-hidden">
       <WorkspaceHeading
         icon={<BarChart3 />}
         title="센서 수위 이력"
@@ -249,14 +249,14 @@ export default function DashboardPage() {
         meta={selectedDevice ? `ID ${selectedDevice.id}` : '지도에서 시설을 선택하세요'}
       />
       {selectedDevice ? (
-        <section className="grid min-h-0 grid-cols-12 gap-3" aria-label="센서 수위 분석">
-          <div className="col-span-8 min-h-0">
+        <section className="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-12" aria-label="센서 수위 분석">
+          <div className="h-[360px] min-h-0 md:col-span-8 md:h-auto">
             <WaterLevelChart
               data={historyDrainId === selectedDevice.id ? history : []}
               deviceId={selectedDevice.id}
             />
           </div>
-          <div className="col-span-4 min-h-0">
+          <div className="h-[280px] min-h-0 md:col-span-4 md:h-auto">
             <DispatchRoute devices={[selectedDevice]} onSelectDevice={setSelectedDevice} />
           </div>
         </section>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
   )
 
   const renderEquipment = () => (
-    <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+    <main className="flex flex-1 flex-col gap-3 p-3 md:grid md:min-h-0 md:grid-rows-[48px_minmax(0,1fr)] md:overflow-hidden">
       <WorkspaceHeading
         icon={<Wrench />}
         title="빗물받이 시설 관리"
@@ -287,7 +287,7 @@ export default function DashboardPage() {
     switch (activeNav) {
       case 'alerts':
         return (
-          <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+          <main className="flex flex-1 flex-col gap-3 p-3 md:grid md:min-h-0 md:grid-rows-[48px_minmax(0,1fr)] md:overflow-hidden">
             <WorkspaceHeading
               icon={<Bell />}
               title="이상 알림 작업 처리"
@@ -317,9 +317,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-dvh min-h-0 overflow-hidden bg-background">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden bg-background md:h-dvh md:min-h-0 md:flex-row md:overflow-hidden">
       <Sidebar activeNav={activeNav} onNavChange={setActiveNav} alertCount={alerts.length} />
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col md:min-h-0">
         <Header
           lastUpdated={lastUpdated}
           onRefresh={() => void loadDashboard()}
@@ -393,7 +393,7 @@ function renderSinglePanel(
   content: React.ReactNode,
 ) {
   return (
-    <main className="grid min-h-0 flex-1 grid-rows-[48px_minmax(0,1fr)] gap-3 overflow-hidden p-3">
+    <main className="flex min-h-[420px] flex-1 flex-col gap-3 p-3 md:grid md:min-h-0 md:grid-rows-[48px_minmax(0,1fr)] md:overflow-hidden">
       <WorkspaceHeading icon={icon} title={title} description={description} />
       <section className="min-h-0">{content}</section>
     </main>
@@ -409,15 +409,15 @@ interface WorkspaceHeadingProps {
 
 function WorkspaceHeading({ icon, title, description, meta }: WorkspaceHeadingProps) {
   return (
-    <header className="flex min-w-0 items-center justify-between border-b border-border px-1">
+    <header className="flex min-h-14 min-w-0 items-center justify-between gap-2 border-b border-border px-1 md:min-h-0">
       <div className="flex min-w-0 items-center gap-3">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-primary/15 bg-primary/8 text-primary [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
         <div className="min-w-0">
           <h1 className="text-[14px] font-semibold text-foreground">{title}</h1>
-          <p className="truncate text-[10px] text-muted-foreground">{description}</p>
+          <p className="line-clamp-2 text-[10px] text-muted-foreground md:truncate">{description}</p>
         </div>
       </div>
-      {meta && <span className="ml-4 shrink-0 rounded-md border border-border bg-card px-2.5 py-1 font-mono text-[9px] text-muted-foreground">{meta}</span>}
+      {meta && <span className="ml-1 shrink-0 rounded-md border border-border bg-card px-2 py-1 font-mono text-[9px] text-muted-foreground md:ml-4 md:px-2.5">{meta}</span>}
     </header>
   )
 }

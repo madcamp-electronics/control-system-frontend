@@ -469,7 +469,7 @@ function DevicePopup({ device, onClose }: DevicePopupProps) {
     <aside
       role="dialog"
       aria-label={`${device.name} 시설 정보`}
-      className="absolute right-3 top-[50px] z-20 w-[320px] overflow-hidden rounded-lg border border-border-strong bg-card/96 shadow-[0_18px_48px_rgb(0_0_0_/_35%)] backdrop-blur-xl"
+      className="absolute left-3 right-3 top-[50px] z-20 overflow-hidden rounded-lg border border-border-strong bg-card/96 shadow-[0_18px_48px_rgb(0_0_0_/_35%)] backdrop-blur-xl sm:left-auto sm:w-[320px]"
     >
       <header className="flex h-10 items-center justify-between border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2">

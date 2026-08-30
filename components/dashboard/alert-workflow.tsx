@@ -75,8 +75,8 @@ export function AlertWorkflow({
   }
 
   return (
-    <section className="grid min-h-0 grid-cols-[minmax(300px,0.85fr)_minmax(440px,1.15fr)] gap-3">
-      <div className="ops-panel min-h-0">
+    <section className="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-[minmax(300px,0.85fr)_minmax(440px,1.15fr)]">
+      <div className="ops-panel h-[320px] min-h-0 md:h-full">
         <header className="ops-panel__header min-h-12 px-4">
           <div>
             <h2 className="text-[13px] font-semibold text-foreground">미해결 알림</h2>
@@ -117,7 +117,7 @@ export function AlertWorkflow({
         </div>
       </div>
 
-      <div className="ops-panel min-h-0">
+      <div className="ops-panel min-h-[420px] md:h-full md:min-h-0">
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {error && <Message tone="error">{error}</Message>}
           {notice && <Message tone="success">{notice}</Message>}
@@ -214,7 +214,7 @@ export function AlertWorkflow({
                   여기서 선택한 사진은 아직 서버로 전송되지 않습니다. 두 장을 모두 선택한 뒤 ‘작업 완료 처리’를 누르면 함께 업로드됩니다.
                 </p>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <PhotoUploader
                     title="작업 전 사진"
                     file={beforeFile}

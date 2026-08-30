@@ -79,11 +79,11 @@ export function StatsCards({ stats }: StatsCardsProps) {
   ]
 
   return (
-    <div className="grid h-full grid-cols-6 overflow-hidden rounded-lg border border-border bg-card shadow-panel">
+    <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card shadow-panel md:h-full md:grid-cols-6">
       {items.map((item, index) => (
         <article
           key={item.label}
-          className="relative flex min-w-0 items-center gap-3 border-r border-border px-3 last:border-r-0 2xl:px-4"
+          className="relative flex min-h-[76px] min-w-0 items-center gap-3 border-b border-r border-border px-3 even:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 md:min-h-0 md:border-b-0 md:border-r md:even:border-r md:last:border-r-0 2xl:px-4"
         >
           <span
             className={`grid h-8 w-8 shrink-0 place-items-center rounded-md bg-secondary/80 ${item.color} [&>svg]:h-4 [&>svg]:w-4`}

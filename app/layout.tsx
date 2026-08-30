@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="bg-background">
-      <body className="font-sans antialiased overflow-hidden">
+      <body className="overflow-x-hidden font-sans antialiased md:overflow-hidden">
         {children}
       </body>
     </html>

@@ -52,7 +52,7 @@ export function AlertList({ alerts, onSelectAlert }: AlertListProps) {
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 divide-y divide-border/80 overflow-hidden">
+      <div className="min-h-0 flex-1 divide-y divide-border/80 overflow-auto">
         {alerts.map((alert) => {
           const style = getAlertStyle(alert.type)
 

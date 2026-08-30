@@ -148,8 +148,8 @@ export function DrainManagement({
   }
 
   return (
-    <section className="grid min-h-0 grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)] gap-3">
-      <div className="ops-panel min-h-0">
+    <section className="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-[minmax(280px,0.8fr)_minmax(420px,1.2fr)]">
+      <div className="ops-panel h-[320px] min-h-0 md:h-full">
         <header className="ops-panel__header min-h-12 px-4">
           <div>
             <h2 className="text-[13px] font-semibold text-foreground">등록 시설</h2>
@@ -201,7 +201,7 @@ export function DrainManagement({
         </div>
       </div>
 
-      <div className="ops-panel min-h-0 overflow-auto p-5">
+      <div className="ops-panel h-auto min-h-[420px] overflow-auto p-4 sm:p-5 md:h-full md:min-h-0">
         {error && (
           <p role="alert" className="mb-4 rounded-md border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
             {error}
@@ -277,7 +277,7 @@ function DrainDetail({
         )}
       </header>
 
-      <dl className="mt-5 grid grid-cols-2 gap-3">
+      <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <DetailItem label="상태" value={statusLabel(detail.status)} />
         <DetailItem label="전체 높이" value={`${detail.totalDepth} cm`} />
         <DetailItem label="위도" value={String(detail.latitude)} />
@@ -306,7 +306,7 @@ function DrainDetail({
         </div>
 
         {latestReading ? (
-          <dl className="mt-3 grid grid-cols-3 gap-3">
+          <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <SensorItem icon={<Waves />} label="현재 수위" value={`${latestReading.waterLevel.toFixed(1)} cm`} />
             <SensorItem icon={<Battery />} label="배터리" value={`${latestReading.batteryLevel.toFixed(0)}%`} />
             <SensorItem icon={<Wifi />} label="신호 세기" value={`${latestReading.signalStrength} dBm`} />
@@ -339,7 +339,7 @@ function DrainDetail({
       <section className="mt-6 border-t border-border pt-4">
         <h3 className="text-sm font-semibold text-foreground">최근 완료 작업 사진</h3>
         {detail.workPhotos.length > 0 ? detail.workPhotos.map((photo) => (
-          <div key={photo.alertId} className="mt-3 grid grid-cols-2 gap-3">
+          <div key={photo.alertId} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <PhotoLink label="작업 전 사진" url={photo.beforePhotoUrl} />
             <PhotoLink label="작업 후 사진" url={photo.afterPhotoUrl} />
           </div>
@@ -376,8 +376,8 @@ function DrainEditor({
         </h2>
       </header>
 
-      <div className="mt-5 grid grid-cols-2 gap-4">
-        <FormField className="col-span-2" label="주소" name="address" defaultValue={detail?.address} />
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField className="sm:col-span-2" label="주소" name="address" defaultValue={detail?.address} />
         {mode === 'create' && (
           <>
             <FormField label="위도" name="latitude" type="number" step="any" />

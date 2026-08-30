@@ -43,13 +43,13 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
   return (
     <aside
       className={cn(
-        'relative z-30 flex shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ease-out',
-        collapsed ? 'w-[68px]' : 'w-[224px] 2xl:w-[236px]'
+        'relative z-30 flex w-full shrink-0 flex-col border-b border-sidebar-border bg-sidebar md:border-b-0 md:border-r md:transition-[width] md:duration-200 md:ease-out',
+        collapsed ? 'md:w-[68px]' : 'md:w-[224px] 2xl:w-[236px]'
       )}
     >
       <div
         className={cn(
-          'flex h-[60px] shrink-0 items-center border-b border-sidebar-border',
+          'hidden h-[60px] shrink-0 items-center border-b border-sidebar-border md:flex',
           collapsed ? 'justify-center px-2' : 'gap-2 px-3'
         )}
       >
@@ -80,7 +80,7 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
         </button>
       </div>
 
-      <div className={cn('px-3 pb-2 pt-4', collapsed && 'px-2')}>
+      <div className={cn('hidden px-3 pb-2 pt-4 md:block', collapsed && 'px-2')}>
         {!collapsed && (
           <p className="px-2 text-[10px] font-medium tracking-[0.12em] text-muted-foreground/70">
             OPERATIONS
@@ -88,7 +88,7 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
         )}
       </div>
 
-      <nav className={cn('flex-1 space-y-1 px-3', collapsed && 'px-2')}>
+      <nav className={cn('grid h-[58px] grid-cols-5 px-1 md:block md:h-auto md:flex-1 md:space-y-1 md:px-3', collapsed && 'md:px-2')}>
         {navItems.map((item) => {
           const active = activeNav === item.id
 
@@ -98,8 +98,8 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
               type="button"
               onClick={() => onNavChange(item.id)}
               className={cn(
-                'group relative flex h-10 w-full items-center rounded-md text-[13px] font-medium transition-colors',
-                collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                'group relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-md px-0 text-[9px] font-medium transition-colors md:h-10 md:flex-row md:text-[13px]',
+                collapsed ? 'md:justify-center md:px-0' : 'md:justify-start md:gap-3 md:px-3',
                 active
                   ? 'bg-sidebar-accent text-sidebar-primary'
                   : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
@@ -108,15 +108,16 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
               title={collapsed ? item.label : undefined}
             >
               {active && (
-                <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-sidebar-primary" />
+                <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-t-full bg-sidebar-primary md:inset-x-auto md:inset-y-2 md:left-0 md:h-auto md:w-0.5 md:rounded-r-full" />
               )}
               <span className="[&>svg]:h-[18px] [&>svg]:w-[18px]">{item.icon}</span>
-              {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
+              <span className={cn('md:flex-1 md:text-left', collapsed && 'md:hidden')}>{item.label}</span>
               {item.badge && (
                 <span
                   className={cn(
                     'grid min-w-5 place-items-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold leading-5 text-white',
-                    collapsed && 'absolute right-0 top-0 h-4 min-w-4 px-1 text-[9px] leading-4'
+                    'absolute right-2 top-1 h-4 min-w-4 px-1 text-[9px] leading-4 md:static md:h-auto md:min-w-5 md:px-1.5 md:text-[10px] md:leading-5',
+                    collapsed && 'md:absolute md:right-0 md:top-0 md:h-4 md:min-w-4 md:px-1 md:text-[9px] md:leading-4'
                   )}
                 >
                   {item.badge}
@@ -127,7 +128,7 @@ export function Sidebar({ activeNav, onNavChange, alertCount = 0 }: SidebarProps
         })}
       </nav>
 
-      <div className={cn('border-t border-sidebar-border p-3', collapsed && 'px-2')}>
+      <div className={cn('hidden border-t border-sidebar-border p-3 md:block', collapsed && 'px-2')}>
         <div
           className={cn(
             'flex items-center rounded-md border border-transparent bg-sidebar-accent/35',
