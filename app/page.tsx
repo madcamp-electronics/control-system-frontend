@@ -136,7 +136,7 @@ export default function DashboardPage() {
       setLastUpdated(formatDisplayDate(new Date()))
     } catch (caught) {
       if (caught instanceof TypeError) {
-        setError(`백엔드(${API_BASE_URL})에 연결할 수 없습니다.`)
+        setError('백엔드 서버에 연결할 수 없습니다.')
       } else {
         setError(caught instanceof ApiError ? caught.message : '관제 데이터를 불러오지 못했습니다.')
       }

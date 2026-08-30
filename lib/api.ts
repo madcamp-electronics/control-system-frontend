@@ -14,9 +14,9 @@ import type {
   WorkerDto,
 } from './types'
 
-export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
-).replace(/\/$/, '')
+// Client-side requests use a same-origin proxy. The actual backend URL is read
+// only by the Next.js server from API_BASE_URL in next.config.mjs.
+export const API_BASE_URL = '/backend'
 
 export class ApiError extends Error {
   constructor(

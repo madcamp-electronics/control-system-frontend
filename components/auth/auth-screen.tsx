@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { Droplets, LoaderCircle } from 'lucide-react'
-import { ApiError, API_BASE_URL, login, signup } from '@/lib/api'
+import { ApiError, login, signup } from '@/lib/api'
 import type { AuthSession } from '@/lib/types'
 
 interface AuthScreenProps {
@@ -38,7 +38,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
       onAuthenticated(session)
     } catch (caught) {
       if (caught instanceof TypeError) {
-        setError(`백엔드(${API_BASE_URL})에 연결할 수 없습니다.`)
+        setError('백엔드 서버에 연결할 수 없습니다.')
       } else {
         setError(caught instanceof ApiError ? caught.message : '요청을 처리하지 못했습니다.')
       }
@@ -121,9 +121,6 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             </button>
           </form>
 
-          <p className="mt-5 text-center font-mono text-[10px] text-muted-foreground">
-            API · {API_BASE_URL}
-          </p>
         </div>
       </section>
     </main>

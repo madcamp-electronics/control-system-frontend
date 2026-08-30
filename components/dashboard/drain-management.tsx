@@ -489,6 +489,6 @@ function numberValue(values: FormData, key: string) {
 
 function toErrorMessage(caught: unknown) {
   if (caught instanceof ApiError) return caught.message
-  if (caught instanceof TypeError) return `백엔드(${API_BASE_URL})에 연결할 수 없습니다.`
+  if (caught instanceof TypeError) return '백엔드 서버에 연결할 수 없습니다.'
   return '요청을 처리하지 못했습니다.'
 }
